@@ -1,6 +1,8 @@
-# dyreson-etal_2021
-__Regional Connections are Key to Planning for Future Power System Operations under Climate Extremes__  
-*Ana Dyreson<sup>3</sup>, Naresh Devineni<sup>5</sup>,Sean Turner<sup>1</sup>,  Thushara DeSilva<sup>3</sup>, Ariel Miara<sup>3</sup>, Nathalie Voisin<sup>1,2 \</sup>,Stuart Cohen<sup>3</sup>, Jordan Macknick<sup>3</sup>
+# dyreson-etal_2021_tbd
+
+**Regional Connections are Key to Planning for Future Power System Operations under Climate Extremes**
+
+Ana Dyreson<sup>3\*</sup>, Naresh Devineni<sup>5</sup>,Sean Turner<sup>1</sup>, Thushara DeSilva<sup>3</sup>, Ariel Miara<sup>3</sup>, Nathalie Voisin<sup>1,2</sup>,Stuart Cohen<sup>3</sup>, Jordan Macknick<sup>3</sup>
 
 <sup>1 </sup> Pacific Northwest National Laboratory, Seattle, WA  
 <sup>2 </sup> University of Washington, Seattle, WA  
