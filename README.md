@@ -1,4 +1,4 @@
-# dyreson-etal_2021_tbd
+# dyreson-etal_2021_earthsfuture
 
 **Regional Connections are Key to Planning for Future Power System Operations under Climate Extremes**
 
