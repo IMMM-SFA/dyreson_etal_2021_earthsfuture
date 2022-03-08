@@ -1,5 +1,5 @@
 
-# dyreson_etal_2021
+# dyreson_etal_2021_earthsfuture
 __The Role of Regional Connections in Planning for Future Power System Operations under Climate Extremes__  
 *Ana Dyreson<sup>3</sup>, Naresh Devineni<sup>5</sup>,Sean Turner<sup>1</sup>,  Thushara DeSilva<sup>3</sup>, Ariel Miara<sup>3</sup>, Nathalie Voisin<sup>1,2 \</sup>,Stuart Cohen<sup>3</sup>, Jordan Macknick<sup>3</sup>  
 1 Pacific Northwest National Laboratory, Seattle, WA  
@@ -14,22 +14,20 @@ Extreme climate events can negatively impact power system operations. Identifyin
 
 ## Code reference
 The R code in this repository can be used to generate the figures and results as discussed in the paper.
+
 ## Journal reference
 TBD
+
 ## Data reference
-TBD
+
 ### Input data
 1) water-constrainted generation capacity and monthly energy targets for production cost modeling (PNNL)
 2) temperature and precipitation results from 100 simulations
 3) derating inputs: dry bulb and wet bulb temperature based on four selected simulations and county design point temperature for thermoelectric generation
 4) load inputs: hourly county electricity demand temperature sensitivites (slopes), hourly county electricity demand for ten scenarios (baseline year + four simulated years for low VG and moderate VG infrastructures; moderate VG infrastrcutures also incorporate load growth)
 
-
 ### Output data
 1) Selected production cost model results aggregated to county or reserve sharing group.
-
-
-
 
 ## Contributing models
 | Model | Version | Repository Link | DOI |
