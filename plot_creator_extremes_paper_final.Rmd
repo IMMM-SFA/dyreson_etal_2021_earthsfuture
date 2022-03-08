@@ -1,0 +1,536 @@
+---
+title: "IM3 Run Analysis"
+author: "Created by: `r Sys.info()['user']`"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: 
+  html_document: 
+    css: custom.css
+    toc: yes
+---
+
+```{r setOptions, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Set up default options for chunks (sections), turn off error or warning messages.
+knitr::opts_chunk$set(echo=FALSE, comment=NA, warning=FALSE, message=FALSE, include=TRUE,
+                      fig.path=paste0('html_plots/',scenario.name,"-"),dev='png',fig.width=8)
+
+
+# Load required R libraries
+library(data.table)
+library(ggplot2)
+library(plyr)
+library(knitr)
+library(lubridate)
+
+# Set figure height and text size options
+fig.height.gen.types = 8
+fig.height.reserves = 8
+fig.height.duration = 8
+element.text.size = 12
+
+# Create plot theme to use for generic plot template
+plot.theme = theme_bw() + 
+  theme(axis.text.x = element_text(angle = -90, hjust=0, vjust=0, size=element.text.size),
+        axis.title = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        strip.text.x = element_text(size = 26),
+        strip.text.y = element_text(size = 26),
+        legend.text = element_text(size = 12) ) 
+
+plot.theme.lines = theme_bw() + 
+  theme(
+        axis.title = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        axis.text.x = element_text(size = 26),
+        strip.text.x = element_text(size = 26),
+        strip.text.y = element_text(size = 26),
+        legend.text = element_text(size = 20)) 
+plot.theme.large = theme_bw() + 
+  theme(axis.text.x = element_text(angle = -75, hjust=0, vjust=0, size=18),
+        axis.title = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        strip.text.x = element_text(size = 26),
+        strip.text.y = element_text(size = 26),
+        legend.text = element_text(size = 18) ) 
+
+plot.theme.bars = theme_bw() + 
+  theme(axis.text.x = element_text(angle = -90, hjust=0, vjust=0, size=16),
+        axis.title = element_text(size = 26),
+        axis.text.y = element_text(size = 16),
+        strip.text.x = element_text(size = 26),
+        strip.text.y = element_text(size = 26),
+        legend.text = element_text(size = 14) ) 
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%s%%%%%%%%%%
+```
+
+
+
+
+***
+## Sensitivities
+```{r total-sensitivities,fig.width=7,fig.height=5.5}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ggplot(data=annual.gen.stats)+
+  geom_point(aes(x=Label,y=`Cost (USD)`/1e9,color=Water),size=2.5)+
+  ylab('Generation \nCost (B$)') + xlab('Stressors') +
+  scale_color_manual('',values=water.color)+
+  # scale_size_manual(breaks=c("Non-drought","1977 Drought","2001 Drought"), values=c(2,1,0.5)*2) +
+  facet_grid(.~Infrastructure)+
+  plot.theme.large+theme(legend.position="right")
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+```
+
+
+***
+## Cap by Type and Region Baseline
+Basin PV has extra capacity in it not used
+```{r cap-type-region-base, fig.height=8, fig.width=4}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ggplot(data = cap.type.region[Label=="Base"]) + geom_bar(aes(x=Scenario, y=value/1000, fill=Type), position='stack', stat='identity',show.legend=TRUE) +
+    theme(legend.position="bottom")+
+  # scale_x_discrete(labels=scenario.labels)+
+  scale_fill_manual('', values = gen.color) +
+  xlab('') +
+  ylab('Capacity [GW]') +
+  facet_grid(TEPPC.Region~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),labeller=as_labeller(reg_names),scales="free_x") +
+  plot.theme +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        strip.text.x = element_text(size = 10),
+        strip.text.y = element_text(size=10) )
+
+```
+
+***
+## Generation by Type and Region Baseline
+```{r generation-type-region-base, fig.height=8, fig.width=4}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ggplot(data = gen.type.region[Label=="Base"]) + geom_bar(aes(x=Scenario, y=value/1000, fill=Type), position='stack', stat='identity',show.legend=TRUE) +
+    theme(legend.position="bottom")+
+  geom_point(data=net.gen.RSG[Label=="Base"],aes(x=Scenario,y=V1Load/1000))+
+  # scale_x_discrete(labels=scenario.labels)+
+  scale_fill_manual('', values = gen.color) +
+  xlab('') +
+  ylab('Gen (TWh)') +
+  facet_grid(TEPPC.Region~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),labeller=as_labeller(reg_names),scales="free_x") +
+  plot.theme +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        strip.text.x = element_text(size = 10),
+        strip.text.y = element_text(size=10) )
+
+```
+***
+
+***
+## Generation by Type Baseline
+```{r generation-type-base, fig.height=6,fig.width=4}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ggplot(data = gen.type.region[Label=="Base"&Infrastructure=="Low VRE",sum(value),by=c("Scenario","Type","Water","Infrastructure","Label","label_detail")]) + geom_bar(aes(x=label_detail, y=V1/1000, fill=Type), position='stack', stat='identity') +
+  scale_fill_manual('', values = gen.color) +
+  ylim(c(0,275))+
+  xlab('') +
+  ylab('Generation by Type (TWh)') +
+  facet_grid(Infrastructure~.,labeller=as_labeller(reg_names),scales="free_x",space="free",switch="y") +
+  plot.theme.bars+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank()) +      theme(legend.position="right")
+
+ggplot(data = gen.type.region[Label=="Base"&Infrastructure=="Mod. VRE",sum(value),by=c("Scenario","Type","Water","Infrastructure","Label","label_detail")]) + geom_bar(aes(x=label_detail, y=V1/1000, fill=Type), position='stack', stat='identity') +
+  scale_fill_manual('', values = gen.color) +
+  ylim(c(0,275))+
+  xlab('') +
+  ylab('Generation by Type (TWh)') +
+  facet_grid(Infrastructure~.,labeller=as_labeller(reg_names),scales="free_x",space="free",switch="y") +
+  plot.theme.bars+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank()) +      theme(legend.position="right")
+
+ggplot(data = gen.type.region[Label=="Base"&Infrastructure=="Low VRE"]) + geom_bar(aes(x=Label, y=value/1000, fill=TEPPC.Region), position='stack', stat='identity') +
+  ylim(c(0,275))+
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+  xlab('') +
+  ylab('Generation by Region (TWh)') +
+  facet_grid(Infrastructure~.,labeller=as_labeller(reg_names),scales="free_x",space="free",switch="y") +
+  plot.theme.bars+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank()) +      theme(legend.position="right")
+
+ggplot(data = gen.type.region[Label=="Base"&Infrastructure=="Mod. VRE"]) + geom_bar(aes(x=Label, y=value/1000, fill=TEPPC.Region), position='stack', stat='identity') +
+  ylim(c(0,275))+
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+  xlab('') +
+  ylab('Generation by Region (TWh)') +
+  facet_grid(Infrastructure~.,labeller=as_labeller(reg_names),scales="free_x",space="free",switch="y") +
+  plot.theme.bars+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank()) +      theme(legend.position="right")
+
+ggplot(data = net.gen.RSG[Label=="Base",]) + geom_bar(aes(x=Infrastructure, y=V1Load/1000, fill=TEPPC.Region), position='stack', stat='identity') +
+   ylim(c(0,275))+
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+  xlab('') +
+  ylab('Load by Region (TWh)') +
+  # facet_grid(factor(Infrastructure,levels=c("Low VRE","Mod. VRE"))~.,labeller=as_labeller(reg_names),scales="free_x",space="free",switch="y") +
+  plot.theme.bars+        theme(legend.position="right")
+  
+
+ggplot(data = net.gen.RSG[Label=="Load"]) + 
+  geom_bar(aes(x=Infrastructure, y=Load.diff/1000, fill=TEPPC.Region), position='stack', stat='identity') +
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+    # scale_y_continuous(limits=c(-20,20))+
+    # scale_x_discrete(breaks=scenarios,  labels=scenario.labels.detail)+
+  xlab('') +  ylab('Load Difference \nfrom Baseline (TWh)') +
+  # facet_grid(factor(Infrastructure,levels=c("Low VRE","Mod. VRE"))~.,scales="free_x",space="free_x",switch="y") +
+  plot.theme.bars+       theme(legend.position="none")   +geom_hline(yintercept=0, linetype="dashed", color = "black")+theme(legend.position="right") 
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+```
+***
+
+***
+## Generation by Type
+```{r generation-type, fig.height=6,fig.width=5}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ggplot(data = gen.type.region[Label!="Base"&Infrastructure=="Low VRE",sum(diff),by=c("Scenario","Type","Water","Infrastructure","Label","label_detail")]) + geom_bar(aes(x=label_detail, y=V1/1000, fill=Type), position='stack', stat='identity') +
+  scale_fill_manual('', values = gen.color) +
+  xlab('') +
+  ylab('Gen. Change\n by Type (TWh)') +
+  scale_y_continuous(limits=c(-20,20))+
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
+  # facet_grid(factor(Infrastructure,levels=c("Low VRE","Mod. VRE"))~.,labeller=as_labeller(reg_names),scales="free_x",space="free",switch="y") +
+  plot.theme.bars+ggtitle('Low VRE')+theme(legend.position="bottom")+guides(fill = guide_legend(nrow = 6))
+
+
+ggplot(data = gen.type.region[Label!="Base"&Infrastructure=="Mod. VRE",sum(diff),by=c("Scenario","Type","Water","Infrastructure","Label","label_detail")]) + geom_bar(aes(x=label_detail, y=V1/1000, fill=Type), position='stack', stat='identity') +
+  scale_fill_manual('', values = gen.color) +
+  xlab('') +
+  ylab('Gen. Change\n by Type (TWh)') +
+  scale_y_continuous(limits=c(-20,20))+
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
+  # facet_grid(factor(Infrastructure,levels=c("Low VRE","Mod. VRE"))~.,labeller=as_labeller(reg_names),scales="free_x",space="free",switch="y") +
+  plot.theme.bars+ggtitle('Mod. VRE')+theme(legend.position="bottom")+guides(fill = guide_legend(nrow = 6))
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+```
+***
+
+
+***
+## Generation by Region 
+```{r generation-region-thermal, fig.height=6, fig.width=5}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ggplot(data = gen.type.region[Label!="Base"&Infrastructure=="Low VRE",sum(diff,na.rm=TRUE),by=c("Label","Scenario","TEPPC.Region","Water","Infrastructure","label_detail")]) + 
+  geom_bar(aes(x=label_detail, y=V1/1000, fill=TEPPC.Region), position='stack', stat='identity') +
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+
+  scale_y_continuous(limits=c(-20,20))+
+  xlab('') +  ylab('Gen. Change \n by Region (TWh)') +
+  plot.theme.bars+       theme(legend.position="bottom")   +geom_hline(yintercept=0, linetype="dashed", color = "black")+guides(fill = guide_legend(nrow = 3))+ggtitle("Low VRE")
+
+ggplot(data = gen.type.region[Label!="Base"&Infrastructure=="Mod. VRE",sum(diff,na.rm=TRUE),by=c("Label","Scenario","TEPPC.Region","Water","Infrastructure","label_detail")]) + 
+  geom_bar(aes(x=label_detail, y=V1/1000, fill=TEPPC.Region), position='stack', stat='identity') +
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+
+  scale_y_continuous(limits=c(-20,20))+
+  xlab('') +  ylab('Gen. Change \n by Region (TWh)') +
+  plot.theme.bars+       theme(legend.position="bottom")   +geom_hline(yintercept=0, linetype="dashed", color = "black")+guides(fill = guide_legend(nrow = 3))+ggtitle("Mod. VRE")
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+```
+
+***
+
+
+***
+## Regional Net Generation Stacks Baseline Compare
+```{r net-generation-region-stack-base-compare,fig.height=6, fig.width=3} 
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ggplot(data=net.gen.RSG[Label=="Base"&Infrastructure=="Low VRE"]) + geom_col(aes(x=label_detail,y=netgen.imports/1000,fill=TEPPC.Region),size=1,position="stack",show.legend=TRUE)+
+  ylab('Regional Imports \n  (Load-Gen)>0 (TWh)')+
+  xlab('')+ylim(c(0,30))+
+    scale_fill_manual(values=cbPalette,guide=guide_legend(reverse=TRUE))+
+  plot.theme.bars+
+  # coord_flip()+
+  facet_grid(Infrastructure~.,scales="free_x",space="free",labeller=as_labeller(reg_names),switch="y")+
+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())+  theme(legend.position="none")#+
+
+ggplot(data=net.gen.RSG[Label=="Base"&Infrastructure=="Mod. VRE"]) + geom_col(aes(x=label_detail,y=netgen.imports/1000,fill=TEPPC.Region),size=1,position="stack",show.legend=TRUE)+
+  ylab('Regional Imports \n  (Load-Gen)>0 (TWh)')+
+  xlab('')+ylim(c(0,30))+
+    scale_fill_manual(values=cbPalette,guide=guide_legend(reverse=TRUE))+
+  plot.theme.bars+
+  # coord_flip()+
+  facet_grid(Infrastructure~.,scales="free_x",space="free",labeller=as_labeller(reg_names),switch="y")+
+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())+  theme(legend.position="none")#+
+
+ggplot(data=net.gen.RSG[Label=="Base"&Infrastructure=="Low VRE"]) + 
+  geom_col(aes(x=label_detail,y=netgen.exports/1000,fill=TEPPC.Region),size=1,position="stack",show.legend=TRUE)+
+  ylab('Regional Exports \n (Load-Gen)<0 (TWh)')+
+  xlab('')+ylim(c(0,30))+
+    scale_fill_manual(values=cbPalette,guide=guide_legend(reverse=TRUE))+
+  plot.theme.bars+
+  # coord_flip()+
+  facet_grid(Infrastructure~.,scales="free_x",space="free",labeller=as_labeller(reg_names),switch="y")+
+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())+  theme(legend.position="none")
+
+ggplot(data=net.gen.RSG[Label=="Base"&Infrastructure=="Mod. VRE"]) + 
+  geom_col(aes(x=label_detail,y=netgen.exports/1000,fill=TEPPC.Region),size=1,position="stack",show.legend=TRUE)+
+  ylab('Regional Exports \n (Load-Gen)<0 (TWh)')+
+  xlab('')+ylim(c(0,30))+
+    scale_fill_manual(values=cbPalette,guide=guide_legend(reverse=TRUE))+
+  plot.theme.bars+
+  # coord_flip()+
+  facet_grid(Infrastructure~.,scales="free_x",space="free",labeller=as_labeller(reg_names),switch="y")+
+  theme(axis.text.x=element_blank(),axis.ticks.x=element_blank())+  theme(legend.position="none")
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+```
+***
+
+
+***
+## Regional Imports Exports Stacks Comparison Final
+```{r imports-region-stack-final,fig.height=6, fig.width=4} 
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+ggplot(data=net.gen.RSG[Label!="Base"&Infrastructure=="Low VRE"]) + geom_col(aes(x=label_detail,y=netgen.imports.diff/1000,fill=TEPPC.Region),size=1,position="stack",show.legend=TRUE)+
+  ylab('Regional Imports \n Change (TWh)')+  xlab('')+
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+  
+  geom_point(data=net.gen.RSG[Label!="Base"&Infrastructure=="Low VRE",.(sum(netgen.imports.diff/1000)),by=c("Water","Scenario","Label","label_detail")],aes(x=label_detail,y=V1))+
+  plot.theme.bars+  
+  ylim(c(-6.5,6.5))+
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
+  theme(legend.position="bottom")+guides(fill = guide_legend(nrow = 4))+ggtitle('Low VRE')
+
+
+ggplot(data=net.gen.RSG[Label!="Base"&Infrastructure=="Mod. VRE"]) + geom_col(aes(x=label_detail,y=netgen.imports.diff/1000,fill=TEPPC.Region),size=1,position="stack",show.legend=TRUE)+
+  ylab('Regional Imports \n Change (TWh)')+  xlab('')+
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+ 
+    geom_point(data=net.gen.RSG[Label!="Base"&Infrastructure=="Mod. VRE",.(sum(netgen.imports.diff/1000)),by=c("Water","Scenario","Label","label_detail")],aes(x=label_detail,y=V1))+# scale_x_discrete(breaks=scenarios,labels=scenario.labels.detail)+
+  plot.theme.bars+  
+  ylim(c(-6.5,6.5))+
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
+  theme(legend.position="bottom")+guides(fill = guide_legend(nrow = 4))+ggtitle('Mod. VRE')
+
+ggplot(data=net.gen.RSG[Label!="Base"&Infrastructure=="Low VRE"]) + geom_col(aes(x=label_detail,y=netgen.exports.diff/1000,fill=TEPPC.Region),size=1,position="stack",show.legend=TRUE)+  ylab('Regional Exports \nChange (TWh)')+  xlab('')+
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+ 
+    geom_point(data=net.gen.RSG[Label!="Base"&Infrastructure=="Low VRE",.(sum(netgen.exports.diff/1000)),by=c("Water","Scenario","Label","label_detail")],aes(x=label_detail,y=V1))+
+  plot.theme.bars+  
+    ylim(c(-6.5,6.5))+
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
+  theme(legend.position="bottom")+ggtitle('Low VRE')+guides(fill=guide_legend(nrow=4))
+
+ggplot(data=net.gen.RSG[Label!="Base"&Infrastructure=="Mod. VRE"]) + geom_col(aes(x=label_detail,y=netgen.exports.diff/1000,fill=TEPPC.Region),size=1,position="stack",show.legend=TRUE)+  ylab('Regional Exports \nChange (TWh)')+  xlab('')+
+    scale_fill_manual('',values=cbPalette,labels=c(`Basin`="Basin",`Canada`="Can.",`Northern California`="N. Cal.",
+             `Northwest`="Northwest",`Rockies`="Roc.",`Southern California`="S. Cal.",
+             `Mexico`="Mex.",`Southwest`="Southwest"))+  
+    geom_point(data=net.gen.RSG[Label!="Base"&Infrastructure=="Mod. VRE",.(sum(netgen.exports.diff/1000)),by=c("Water","Scenario","Label","label_detail")],aes(x=label_detail,y=V1))+
+  plot.theme.bars+  
+    ylim(c(-6.5,6.5))+
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
+  theme(legend.position="bottom")+ggtitle('Mod. VRE')+guides(fill=guide_legend(nrow=4))
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+```
+
+***
+## Total Net Generation Timeseries Lines
+```{r net-generation-total-timeseries-lines,fig.width=16,fig.height=6} 
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+ggplot(data=net.gen.day[]) +      geom_line(aes(x=time,y=mean.net.gen/1000,color=Label,group=Scenario),size=.5,position="identity",show.legend=TRUE)+
+    geom_point(data=net.gen.day,aes(x=time,y=max.net.gen/1000,color=Label,group=Scenario),size=1.5,show.legend=FALSE,shape=18)+
+     geom_vline(xintercept=start.2010,linetype="dashed")+
+    geom_vline(xintercept=end.2010,linetype="dashed")+
+  geom_vline(xintercept=start.2024,linetype="dashed")+
+  geom_vline(xintercept=end.2024,linetype="dashed")+
+    ylab('Daily Regional Imports (GW)\n Avg and Max')+
+ scale_y_continuous(limits=c(0,NA),expand=c(0,0))+
+    scale_color_manual('Mean', values = labels.color) +
+    # scale_x_continuous(expand=c(0,0))+
+  plot.theme.large+  theme(legend.position="right")+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),scales="free_x")
+
+ggplot() +      
+  geom_line(data=net.gen.day[Label=="Combination"],aes(x=time,y=mean.net.gen/1000,color=Label,group=Scenario),size=.5,position="identity",show.legend=TRUE)+
+   geom_line(data=net.gen.day[Label=="Water"],aes(x=time,y=mean.net.gen/1000,color=Label,group=Scenario),size=.5,position="identity",show.legend=TRUE)+
+   geom_line(data=net.gen.day[Label=="Load"],aes(x=time,y=mean.net.gen/1000,color=Label,group=Scenario),size=.5,position="identity",show.legend=TRUE)+
+   geom_line(data=net.gen.day[Label=="Derating"],aes(x=time,y=mean.net.gen/1000,color=Label,group=Scenario),size=.5,position="identity",show.legend=TRUE)+
+   geom_line(data=net.gen.day[Label=="Base"],aes(x=time,y=mean.net.gen/1000,color=Label,group=Scenario),size=.5,position="identity",show.legend=TRUE)+
+     geom_vline(xintercept=start.2010,linetype="dashed")+
+    geom_vline(xintercept=end.2010,linetype="dashed")+
+  geom_vline(xintercept=start.2024,linetype="dashed")+
+  geom_vline(xintercept=end.2024,linetype="dashed")+
+    ylab('Daily Mean\n Regional Imports (GW)')+xlab('')+
+ scale_y_continuous(limits=c(0,27.5),expand=c(0,0))+
+    scale_color_manual('Mean', values = labels.color) +
+    # scale_x_continuous(expand=c(0,0))+
+  plot.theme.large+  theme(legend.position="right")+
+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),scales="free_x")
+
+
+ggplot() +      
+  geom_point(data=net.gen.day,aes(x=time,y=max.net.gen/1000,color=Label,group=Scenario),size=1.5,show.legend=TRUE,shape=18)+
+     geom_vline(xintercept=start.2010,linetype="dashed")+
+    geom_vline(xintercept=end.2010,linetype="dashed")+
+  geom_vline(xintercept=start.2024,linetype="dashed")+
+  geom_vline(xintercept=end.2024,linetype="dashed")+
+    ylab('Daily Max \nRegional Imports (GW)')+xlab('')+
+ scale_y_continuous(limits=c(0,27.5),expand=c(0,0))+
+    scale_color_manual('Max', values = labels.color) +
+    # scale_x_continuous(expand=c(0,0))+
+  plot.theme.large+  theme(legend.position="right")+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),scales="free_x")
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+```
+
+***
+## Load Check
+```{r load-check} 
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+ggplot(load.region.interval[TEPPC.Region=="Southern California"&(Label=="Load"|Label=="Base"),.(time=min(time),max.load=max(MW),mean.load=mean(MW)),by=c("Scenario","Infrastructure","Water","Month","day","Label","TEPPC.Region")]) +    geom_line(aes(x=time,y=mean.load/1000,color=Label,group=Scenario),size=1.5)+    
+  geom_point(aes(x=time,y=max.load/1000,color=Label,group=Scenario),size=1.5,shape=18)+
+    ylab('Daily Load \n Mean and Max (GW)')+xlab('')+
+    geom_vline(xintercept=start.2010,linetype="dashed")+
+    geom_vline(xintercept=end.2010,linetype="dashed")+
+  geom_vline(xintercept=start.2024,linetype="dashed")+
+  geom_vline(xintercept=end.2024,linetype="dashed")+
+ scale_y_continuous(limits=c(0,40),expand=c(0,0))+
+    scale_color_manual('', values = labels.color) +
+    # scale_x_continuous(expand=c(0,0))+
+  plot.theme.large+  theme(legend.position="bottom")+ggtitle('Southern California')+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),scales="free_x",labeller=as_labeller(reg_names))
+
+ggplot(load.region.interval[(Label=="Load"|Label=="Base"),.(tot.MW=sum(MW)),by=c("Scenario","Infrastructure","Water","Month","day","hour","time","Label")][,.(time=min(time),max.MW=max(tot.MW),mean.MW=mean(tot.MW)),by=c("Month","day","Scenario","Infrastructure","Water","Label")]) +           
+  geom_point(aes(x=time,y=max.MW/1000,color=Label,group=Scenario),size=1.5,shape=18,show.legend=TRUE)+
+  geom_line(aes(x=time,y=mean.MW/1000,color=Label,group=Scenario),size=1.5,show.legend=FALSE)+
+    ylab('Daily Load \n Mean and Max (GW)')+xlab('')+
+    geom_vline(xintercept=start.2010,linetype="dashed")+
+    geom_vline(xintercept=end.2010,linetype="dashed")+
+  geom_vline(xintercept=start.2024,linetype="dashed")+
+  geom_vline(xintercept=end.2024,linetype="dashed")+
+ scale_y_continuous(limits=c(0,NA),expand=c(0,0))+
+    scale_color_manual('Max', values = labels.color) +
+    # scale_x_continuous(expand=c(0,0))+
+  plot.theme.large+  theme(legend.position="right")+ggtitle('Western U.S.')+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),scales="free_x",labeller=as_labeller(reg_names))
+
+
+dataall=load.region.interval[(Label=="Load"|Label=="Base"),.(tot.MW=sum(MW)),by=c("Scenario","Infrastructure","Water","Month","day","hour","time","Label")][,.(time=min(time),max.MW=max(tot.MW),mean.MW=mean(tot.MW),tot.MWh=sum(tot.MW)),by=c("Month","day","Scenario","Infrastructure","Water","Label")]
+
+ggplot(load.region.interval[TEPPC.Region=="Southern California"&(Label=="Load"|Label=="Base"),.(time=min(time),max.load=max(MW),mean.load=mean(MW)),by=c("Scenario","Infrastructure","Water","Month","day","Label","TEPPC.Region")]) +    geom_line(aes(x=time,y=mean.load/1000,color=Label,group=Scenario),size=1,show.legend=FALSE)+    
+  geom_point(aes(x=time,y=max.load/1000,color=Label,group=Scenario),size=1,show.legend=FALSE)+
+  geom_point(data=dataall,aes(x=time,y=max.MW/1000,color=Label,group=Scenario),size=1.5,show.legend=FALSE)+
+  geom_line(data=dataall,aes(x=time,y=mean.MW/1000,color=Label,group=Scenario),size=1.5,show.legend=TRUE)+
+  geom_vline(xintercept=start.2010,linetype="dashed")+
+    geom_vline(xintercept=end.2010,linetype="dashed")+
+  geom_vline(xintercept=start.2024,linetype="dashed")+
+  geom_vline(xintercept=end.2024,linetype="dashed")+
+    ylab('Daily Demand (GW)')+xlab('')+
+ scale_y_continuous(limits=c(0,NA),expand=c(0,0))+
+    scale_color_manual('Mean', values = labels.color) +
+    # scale_x_continuous(expand=c(0,0))+
+  plot.theme.large+  theme(legend.position="right")+ggtitle('Western U.S. with S. Cal.')+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),scales="free_x",labeller=as_labeller(reg_names))
+
+
+ggplot(load.region.interval[TEPPC.Region=="Southern California"&(Label=="Load"|Label=="Base"),.(time=min(time),max.load=max(MW),mean.load=mean(MW),tot.load=sum(MW,na.rm=TRUE)),by=c("Scenario","Infrastructure","Water","Month","day","Label","TEPPC.Region")]) +    geom_line(aes(x=time,y=tot.load/1e6,color=Label,group=Scenario),size=1.2,show.legend=FALSE)+
+    geom_line(data=dataall,aes(x=time,y=tot.MWh/1e6,color=Label,group=Scenario),size=1.5,show.legend=TRUE)+
+  geom_vline(xintercept=start.2010,linetype="dashed")+
+    geom_vline(xintercept=end.2010,linetype="dashed")+
+  geom_vline(xintercept=start.2024,linetype="dashed")+
+  geom_vline(xintercept=end.2024,linetype="dashed")+
+    ylab('Daily Load (TWh)')+xlab('')+
+ scale_y_continuous(limits=c(0,NA),expand=c(0,0))+
+    scale_color_manual('Scenario', values = labels.color) +
+  plot.theme.large+  theme(legend.position="bottom")+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),scales="free_x",labeller=as_labeller(reg_names))+  geom_text(x=as.POSIXct("2010-06-1"),y=3,label="Western U.S.",hjust=0,size=6)+
+    geom_text(x=as.POSIXct("2010-06-1"),y=.8,label="S. Cal.",hjust=0,size=6)
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+```
+
+
+***
+## Total Net Generation Timeseries Diurnal
+```{r net-generation-total-timeseries-diurnal} 
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+ggplot(data=net.gen.interval[(time>start.2010&time<end.2010)|(time>start.2024&time<end.2024),.(neg=mean(negative.net.gen,na.rm=TRUE),pos=mean(positive.net.gen,na.rm=TRUE),pos.max=max(positive.net.gen,na.rm=TRUE)),by=c("hour","Scenario","Label","Water","Infrastructure")]) +      geom_line(aes(x=hour,y=-neg/1000,color=Label,group=Scenario),size=1,position="identity",show.legend=TRUE)+
+  # geom_point(aes(x=hour,y=pos.max/1000,color=Label,group=Scenario),size=1)+
+    ylab('Regional Imports (GW)\n Hourly Mean')+
+scale_y_continuous(limits=c(0,27.5),expand=c(0,0))+
+    scale_color_manual('', values = labels.color) +
+  scale_x_continuous(limits=c(0,23),breaks=seq(from=0,to=24,by=6),expand = c(0, 0)) +
+  plot.theme.lines  +ggtitle('Peak Week') + theme(legend.position="bottom")+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")))
+
+ggplot(data=net.gen.interval[,.(neg=mean(negative.net.gen,na.rm=TRUE),pos=mean(positive.net.gen,na.rm=TRUE),pos.max=max(positive.net.gen,na.rm=TRUE)),by=c("hour","Scenario","Label","Water","Infrastructure")]) +      
+  geom_line(aes(x=hour,y=-neg/1000,color=Label,group=Scenario),size=1,position="identity",show.legend=TRUE)+
+  # geom_point(aes(x=hour,y=pos.max/1000,color=Label,group=Scenario),size=1)+
+    ylab('Regional Imports (GW)\n Hourly Mean')+
+      scale_y_continuous(limits=c(0,27.5),expand=c(0,0))+
+    scale_color_manual('', values = labels.color) +
+  scale_x_continuous(limits=c(0,23),breaks=seq(from=0,to=24,by=6),expand = c(0, 0)) +
+  plot.theme.lines+ggtitle('Summer')+
+  theme(legend.position="bottom")+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")))
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+```
+***
+
+***
+## Thermal Fleet Availability Timeseries
+Accounts for daily and seasonal deratings
+
+```{r thermalMWtimeseries}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+hydrodata=rbind(
+  gen.type.interval[(Label=="Base"|Label=="Water"|Label=="Combination")&Type=="Hydro",
+                     sum(MW,na.rm=TRUE)/1e3,by=c("time","Label","Water","Infrastructure","Type","Month")][,mean(V1),by=c("Label","Water","Infrastructure","Type","Month")],
+  gen.type.interval[(Label=="Base"|Label=="Water"|Label=="Combination")&Type=="Hydro"&Month==max(gen.type.interval$Month),
+                    sum(MW,na.rm=TRUE)/1e3,by=c("time","Label","Water","Infrastructure","Type","Month")][,mean(V1),by=c("Label","Water","Infrastructure","Type","Month")][,Month:=NULL][,Month:=max(gen.type.interval$Month)+1])
+
+hydrodata[Infrastructure=="Low VRE",MonthDate:=make_datetime(year=2010,month=hydrodata[Infrastructure=="Low VRE"]$Month,day=1L)]   #as.POSIXct.Date(Month)]
+hydrodata[Infrastructure=="Mod. VRE",MonthDate:=make_datetime(year=2024,month=hydrodata[Infrastructure=="Low VRE"]$Month,day=1L)] 
+             
+
+ggplot(thermal.hour.fleetcf[Label=="Base"|Label=="Combination"|Label=="Water"|Label=="Derating"])+
+  geom_line(aes(x=time,y=MW/1000,color=Label,group=Scenario),size=1.2)+
+  xlab('')+ylab('GW')+
+  scale_color_manual('', values = labels.color) +
+  geom_vline(xintercept=start.2010,linetype="dashed")+
+  geom_vline(xintercept=end.2010,linetype="dashed")+
+  geom_vline(xintercept=start.2024,linetype="dashed")+
+  geom_vline(xintercept=end.2024,linetype="dashed")+
+geom_step(data=hydrodata[Label=="Base"|Label=="Water"],aes(x=MonthDate,y=V1,color=Label),show.legend=TRUE,size=1)+
+  scale_y_continuous(limits=c(0,140),expand=c(0,0))+
+  plot.theme.large+  theme(legend.position="bottom")+
+  facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")),scales="free_x",labeller=as_labeller(reg_names))+
+  geom_text(x=as.POSIXct("2010-06-1"),y=100,label="Thermal capacity",hjust=0,size=6)+
+    geom_text(x=as.POSIXct("2010-06-1"),y=18,label="Hydro average available",hjust=0,size=6)
+
+
+
+ggplot(thermal.hour.fleetcf)+
+  geom_line(aes(x=leftoverinterval,y=LeftoverMW/1000,color=Label,group=Scenario),size=1.2)+
+  scale_color_manual('Scenario', values = labels.color) +
+    # ylim(c(0,0.7))+
+  xlab('Hours')+ylab('Thermal Fleet\n Capacity for Reserves GW')+
+  plot.theme.large+
+      facet_grid(.~factor(Infrastructure,levels=c("Low VRE","Mod. VRE")))
+```
+
+***
+## Annual (Period) CF stats
+```{r annual-cfstats-table}
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+kable(thermal.hour.fleetcf[,mean(FleetCF),by=c("Label","Scenario","Infrastructure")],format.args=list(big.mark=","))
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -->
+```
