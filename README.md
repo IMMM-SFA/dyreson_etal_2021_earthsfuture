@@ -1,7 +1,7 @@
 
 # dyreson_etal_2021_earthsfuture
 __The Role of Regional Connections in Planning for Future Power System Operations under Climate Extremes__  
-*Ana Dyreson<sup>3</sup>, Naresh Devineni<sup>5</sup>,Sean Turner<sup>1</sup>,  Thushara DeSilva<sup>3</sup>, Ariel Miara<sup>3</sup>, Nathalie Voisin<sup>1,2 \</sup>,Stuart Cohen<sup>3</sup>, Jordan Macknick<sup>3</sup>  
+*Ana Dyreson<sup>3</sup>, Naresh Devineni<sup>5</sup>,Sean Turner<sup>1</sup>,  Thushara DeSilva<sup>3</sup>, Ariel Miara<sup>3</sup>, Nathalie Voisin<sup>1,2</sup>,Stuart Cohen<sup>3</sup>, Jordan Macknick<sup>3</sup>  
 1 Pacific Northwest National Laboratory, Seattle, WA  
 2 University of Washington, Seattle, WA  
 3 National Renewable Energy Laboratory, Golden, CO  
