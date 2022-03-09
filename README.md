@@ -19,6 +19,9 @@ The R code in this repository can be used to generate the figures and results as
 TBD
 
 ## Data reference
+Both input and output data can be downloaded from: https://zenodo.org/record/6339553#.Yijp2RDMJUM and cited like the following:
+
+> Dyreson, Ana, Devineni, Naresh, Turner, Sean, DeSilva, Thushara, Miara, Ariel, Voisin, Nathalie, Cohen, Stuart, & Macknick, Jordan. (2022). Supplemental Data for Dyreson et al. 2021, Earth's Future (1.0.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.6339553
 
 ### Input data
 1) water-constrainted generation capacity and monthly energy targets for production cost modeling (PNNL)
