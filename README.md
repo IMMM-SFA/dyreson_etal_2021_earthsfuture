@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/416025268.svg)](https://zenodo.org/badge/latestdoi/416025268)
+
 
 # dyreson_etal_2021_earthsfuture
 __The Role of Regional Connections in Planning for Future Power System Operations under Climate Extremes__  
